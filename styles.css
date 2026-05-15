@@ -1,0 +1,84 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #141414;
+  color: #f0f0f0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+header p {
+  margin: 0.5rem 0 0;
+  color: #b0b0b0;
+}
+
+.editors {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.editor-box,
+.preview-box {
+  background: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.editor-box label,
+.preview-box h2 {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  background: #121212;
+  color: #f5f5f5;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  resize: vertical;
+}
+
+textarea::placeholder {
+  color: #777;
+}
+
+iframe {
+  width: 100%;
+  min-height: 620px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: white;
+}
+
+@media (max-width: 960px) {
+  .editors {
+    grid-template-columns: 1fr;
+  }
+}

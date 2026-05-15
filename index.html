@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>추천 알고리즘 편향 분석 실험실</title>
+
+    <!-- 구글 폰트 -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <!-- 스타일시트 -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ══════════════════════════════════
+     헤더
+══════════════════════════════════ -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">DP</div>
+        <div>
+          <h1>추천 알고리즘 편향 분석 실험실</h1>
+          <p>데이터 편향이 AI 추천에 미치는 영향 탐구</p>
+        </div>
+      </div>
+      <div class="step-indicator" id="step-indicator"></div>
+    </header>
+
+    <!-- ══════════════════════════════════
+     메인 컨텐츠
+══════════════════════════════════ -->
+    <main class="main">
+      <!-- 탭 네비게이션 -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab(0)">
+          <span class="tab-num">01</span
+          ><span>관심사 설정 &amp; 기본 추천</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(1)">
+          <span class="tab-num">02</span><span>데이터 편향 실험</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(2)">
+          <span class="tab-num">03</span><span>결과 비교 분석</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(3)">
+          <span class="tab-num">04</span><span>편향 개선</span>
+        </button>
+      </div>
+
+      <!-- ────────────────────────────────
+       1단계: 관심사 설정 & 기본 추천
+  ──────────────────────────────── -->
+      <div id="panel-0" class="panel active">
+        <div class="grid2" style="margin-bottom: 1rem">
+          <!-- 관심사 선택 카드 -->
+          <div class="card">
+            <div class="card-title">
+              내 관심사 선택
+              <span class="badge badge-blue" id="sel-count-badge">0 / 4</span>
+            </div>
+            <div class="card-sub">
+              2~4개 선택 → 유사 사용자 기반으로 추천합니다
+            </div>
+            <div class="tag-grid" id="interest-buttons"></div>
+          </div>
+
+          <!-- 사용자 DB 카드 -->
+          <div class="card">
+            <div class="card-title">
+              사용자 데이터베이스
+              <span class="badge badge-purple">8명</span>
+            </div>
+            <div class="card-sub">
+              알고리즘이 참조하는 다른 사용자들의 선택 이력
+            </div>
+            <div id="user-list"></div>
+          </div>
+        </div>
+
+        <!-- 기본 추천 결과 카드 -->
+        <div class="card">
+          <div class="card-title">
+            기본 추천 결과
+            <span class="badge badge-blue">편향 없음</span>
+          </div>
+          <div class="card-sub">유사도(Jaccard) 기반 협업 필터링 알고리즘</div>
+          <div id="base-recs">
+            <div class="empty">관심사를 선택한 후 추천을 실행하세요</div>
+          </div>
+          <div style="margin-top: 1rem">
+            <button class="btn btn-blue" onclick="runBaseRec()">
+              ▶ 기본 추천 실행
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────
+       2단계: 데이터 편향 실험
+  ──────────────────────────────── -->
+      <div id="panel-1" class="panel">
+        <div class="alert alert-warning">
+          아래 도구로 데이터를 조작하고 편향 추천을 실행해 왜곡을 확인하세요.
+        </div>
+
+        <div class="grid2" style="margin-bottom: 1rem">
+          <!-- 편향 조작 도구 카드 -->
+          <div class="card">
+            <div class="card-title">편향 조작 도구</div>
+
+            <div class="sec-label" style="margin-top: 8px">
+              특정 항목 강제 삽입
+            </div>
+            <div class="card-sub" style="margin-top: -6px">
+              선택한 항목을 다수 사용자 데이터에 반복 추가합니다
+            </div>
+            <div class="tag-grid" id="inject-buttons"></div>
+
+            <hr class="divider" />
+
+            <div class="sec-label">편향 강도 조절</div>
+            <div class="slider-row">
+              <span class="slider-label">반복 삽입 횟수</span>
+              <input
+                type="range"
+                min="1"
+                max="6"
+                value="2"
+                id="bias-strength"
+                oninput="document.getElementById('bs-out').textContent=this.value"
+              />
+              <span class="slider-val" id="bs-out">2</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">적용 사용자 수</span>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                value="4"
+                id="bias-users"
+                oninput="document.getElementById('bu-out').textContent=this.value"
+              />
+              <span class="slider-val" id="bu-out">4</span>
+            </div>
+
+            <div class="flex-row" style="margin-top: 14px">
+              <button class="btn btn-amber" onclick="applyBias()">
+                ▶ 편향 적용
+              </button>
+              <button class="btn btn-sm" onclick="resetBias()">초기화</button>
+            </div>
+          </div>
+
+          <!-- 조작된 DB 카드 -->
+          <div class="card">
+            <div class="card-title">
+              조작된 데이터베이스
+              <span class="badge badge-amber" id="bias-badge">편향 없음</span>
+            </div>
+            <div class="card-sub">
+              주황색 항목이 인위적으로 삽입된 데이터입니다
+            </div>
+            <div id="biased-user-list"></div>
+            <div id="bias-alert" style="margin-top: 10px"></div>
+          </div>
+        </div>
+
+        <!-- 편향 추천 결과 카드 -->
+        <div class="card">
+          <div class="card-title">
+            편향 적용 후 추천 결과
+            <span class="badge badge-amber">조작된 데이터</span>
+          </div>
+          <div class="card-sub">
+            편향된 사용자 데이터를 기반으로 생성된 추천
+          </div>
+          <div id="biased-recs">
+            <div class="empty">편향을 적용한 후 추천을 실행하세요</div>
+          </div>
+          <div style="margin-top: 1rem">
+            <button class="btn btn-amber" onclick="runBiasedRec()">
+              ▶ 편향 추천 실행
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────
+       3단계: 결과 비교 분석
+  ──────────────────────────────── -->
+      <div id="panel-2" class="panel">
+        <div class="alert alert-info" id="compare-alert">
+          1단계와 2단계에서 추천을 모두 실행한 후 비교 분석이 가능합니다.
+        </div>
+
+        <!-- 통계 요약 -->
+        <div class="grid3" style="margin-bottom: 1rem">
+          <div class="stat-card">
+            <div class="stat-num" id="stat-overlap">—</div>
+            <div class="stat-label">결과 겹침 수 (기본 추천 기준)</div>
+          </div>
+          <div class="stat-card">
+            <div
+              class="stat-num"
+              id="stat-diversity"
+              style="color: var(--amber)"
+            >
+              —
+            </div>
+            <div class="stat-label">다양성 감소율</div>
+          </div>
+          <div class="stat-card">
+            <div
+              class="stat-num"
+              id="stat-bias-score"
+              style="color: var(--red)"
+            >
+              —
+            </div>
+            <div class="stat-label">편향 강도</div>
+          </div>
+        </div>
+
+        <!-- 좌우 비교 -->
+        <div class="grid2" style="margin-bottom: 1rem">
+          <div class="card">
+            <div class="card-title">
+              기본 추천 순위 <span class="badge badge-blue">원본</span>
+            </div>
+            <div id="compare-base">
+              <div class="empty">추천 실행 전입니다</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              편향 후 추천 순위 <span class="badge badge-amber">조작됨</span>
+            </div>
+            <div id="compare-biased">
+              <div class="empty">추천 실행 전입니다</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 점수 변화 + 차트 -->
+        <div class="card">
+          <div class="card-title">항목별 점수 변화 (편향 전 → 후)</div>
+          <div id="delta-list"></div>
+          <div class="chart-wrap">
+            <canvas
+              id="compareChart"
+              role="img"
+              aria-label="편향 전후 추천 점수 비교 막대 그래프"
+            ></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────
+       4단계: 편향 개선
+  ──────────────────────────────── -->
+      <div id="panel-3" class="panel">
+        <div class="alert alert-success">
+          항목 가중치와 데이터 균형을 조정해 편향을 완화하고, 원본 추천과
+          비교해보세요.
+        </div>
+
+        <div class="grid2" style="margin-bottom: 1rem">
+          <!-- 개선 도구 카드 -->
+          <div class="card">
+            <div class="card-title">편향 개선 도구</div>
+
+            <div class="sec-label" style="margin-top: 8px">
+              항목 가중치 조절
+            </div>
+            <div class="card-sub" style="margin-top: -6px">
+              0에 가까울수록 해당 항목의 추천 영향력을 줄입니다
+            </div>
+            <div id="weight-sliders"></div>
+
+            <hr class="divider" />
+
+            <div class="sec-label">균형 조정</div>
+            <div class="card-sub" style="margin-top: -6px">
+              편향된 항목의 반복 데이터를 제거하고 원본 분포를 복원합니다
+            </div>
+            <div class="flex-row" style="margin-top: 8px">
+              <button class="btn btn-green" onclick="applyFix()">
+                ✓ 균형 조정 + 추천 실행
+              </button>
+              <button class="btn btn-sm" onclick="resetFix()">초기화</button>
+            </div>
+          </div>
+
+          <!-- 개선 후 추천 결과 카드 -->
+          <div class="card">
+            <div class="card-title">
+              개선 후 추천 결과 <span class="badge badge-green">개선됨</span>
+            </div>
+            <div class="card-sub">가중치 조정 및 균형 복원 후의 추천</div>
+            <div id="fixed-recs">
+              <div class="empty">개선 도구를 적용한 후 결과가 표시됩니다</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3단계 비교 차트 -->
+        <div class="card" style="margin-bottom: 1rem">
+          <div class="card-title">3단계 비교: 원본 vs 편향 vs 개선</div>
+          <div class="card-sub">
+            각 단계별 추천 점수를 비교해 편향과 개선의 효과를 확인하세요
+          </div>
+          <div class="chart-wrap" style="height: 260px">
+            <canvas
+              id="fixChart"
+              role="img"
+              aria-label="원본, 편향, 개선 후 추천 점수 3단계 비교"
+            ></canvas>
+          </div>
+        </div>
+
+        <!-- 탐구 결론 -->
+        <div class="card">
+          <div class="card-title">탐구 결론</div>
+          <div id="conclusion">
+            <div class="empty">개선을 적용하면 결론이 표시됩니다</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 스크립트 -->
+    <script src="script.js"></script>
+  </body>
+</html>
