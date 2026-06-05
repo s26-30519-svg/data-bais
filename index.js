@@ -169,7 +169,7 @@ app.get('/api/ai', async (req, res) => {
     }
 
     const { text } = await generateText({
-      model: 'google/gemini-3.1-flash-lite',
+      model: 'google/gemini-3-flash',
       prompt: prompt,
     });
 
